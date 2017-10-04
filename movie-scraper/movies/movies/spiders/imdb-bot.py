@@ -6,9 +6,9 @@ from scrapy.loader import ItemLoader
 
 # Scrapy version 1.4.0 needed
 
-start_year = 2005
-end_year = 2016
-page_max = 150
+start_year = 2000
+end_year = 2017
+page_max = 2 #10000
 
 class IMDB_Spider(scrapy.Spider):
 
@@ -63,10 +63,20 @@ class IMDB_Spider(scrapy.Spider):
             rating_count = 'NaN'
         
         mpaa_raw = response.xpath('//span[@itemprop="contentRating"]/text()').extract_first()
-        mpaa = re.search('^Rated ([^\s]+)', mpaa_raw)[1].strip()
-
-        runtime = response.xpath('//time[@itemprop="duration"]/text()').extract()[1].split()[0]
-        director = response.xpath('//span[@itemprop="director"]/a/span/text()').extract_first()
+        if mpaa_raw.lower() == 'g' :
+            mpaa = 'G'
+        else:    
+            mpaa = re.search('^Rated ([^\s]+)', mpaa_raw)[1].strip()
+        try:
+            runtime = response.xpath('//time[@itemprop="duration"]/text()').extract()[1].split()[0]
+        except:
+            runtime = 'NaN'
+        
+        try:
+            director = response.xpath('//span[@itemprop="director"]/a/span/text()').extract_first()
+        except:
+            director = 'NaN'
+        
         genre = ','.join(response.xpath('//div[@itemprop="genre"]/a/text()').extract())
 
         try:
@@ -74,17 +84,23 @@ class IMDB_Spider(scrapy.Spider):
         except:
             budget = 'NaN'
 
-        country = response.xpath('//div[@class="txt-block" and h4/text()="Country:"]/a/text()').extract_first()
+        try:
+            country = response.xpath('//div[@class="txt-block" and h4/text()="Country:"]/a/text()').extract_first()
+        except:
+            country = 'NaN'
 
         try:
             language = ','.join(response.xpath('//div[@class="txt-block" and h4/text()="Language:"]/a/text()').extract())
         except:
             language = 'NaN'
-        
+
+        release = response.xpath('//meta[@itemprop="datePublished"]/@content').extract_first()
+
         # Store results in a dictionary
         results = {
             'title':title,
             'year':year,
+            'release':release,
             'rating':rating,
             'rating_count':rating_count,
             'genre':genre,
@@ -105,14 +121,14 @@ class IMDB_Spider(scrapy.Spider):
         # Call parsing on the Box Office Mojo page
         yield response.follow(
             box_url.format(title_url),
-            self.parse_money,
+            self.parse_box_office_search,
             meta=results
         )
 
 
 
 
-    def parse_money(self, response):
+    def parse_box_office_search(self, response):
 
         year = response.request.meta['year']
         title = response.request.meta['title']
@@ -139,15 +155,29 @@ class IMDB_Spider(scrapy.Spider):
         # Retrieve URL
         mojo_url = row.xpath('td/a/@href').extract_first()
 
+        # Grab theaters and studio
+        try:
+
+        except:
+
+        try:
+
+        except:
+
         results = response.request.meta
         results.update({'lifetime':lifetime,
                 'opening':opening,
                 'mojo_url':mojo_url
                  })
 
-        yield results
+        
+        #yield results
+        yield response.follow(
+            url=
+            callback=
+            meta=
+        )
 
 
-
-    def parse_production():
+    def parse_mojo_worldwide():
         pass
