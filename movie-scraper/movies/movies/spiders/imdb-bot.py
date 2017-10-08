@@ -6,9 +6,9 @@ from scrapy.loader import ItemLoader
 
 # Scrapy version 1.4.0 needed
 
-start_year = 2000
+start_year = 1980
 end_year = 2017
-page_max = 2 #10000
+page_max = 10000
 
 class IMDB_Spider(scrapy.Spider):
 
@@ -138,16 +138,6 @@ class IMDB_Spider(scrapy.Spider):
         (contains(td/font/a[contains(@href, "schedule")]/text(), "{1}"))]'\
         .format(title,year))
 
-        # If row not found, parse second pages if available
-        '''if not row == []:
-            pass
-        else:
-            # CHeck page number
-            next_page = response.xpath('//a[contains(@href, "showpage")]/@href').extract_first()
-            yield response.follow(
-                url = next_page,
-                callback = self.parse_money
-            )'''
         # Extract the lifetime and opening gross
         lifetime = row.xpath('td/font/text()')[1].extract()
         opening = row.xpath('td/font/text()')[3].extract()
@@ -157,27 +147,43 @@ class IMDB_Spider(scrapy.Spider):
 
         # Grab theaters and studio
         try:
-
+            studio =  row.xpath('td/font/text()')[0].extract()
         except:
+            studio = 'None'
 
         try:
-
+            theaters = row.xpath('td/font/text()')[4].extract()
         except:
+            theaters = 'None'
 
         results = response.request.meta
         results.update({'lifetime':lifetime,
                 'opening':opening,
-                'mojo_url':mojo_url
+                'mojo_url':mojo_url,
+                'studio':studio,
+                'theaters':theaters
                  })
 
         
-        #yield results
+        
         yield response.follow(
-            url=
-            callback=
-            meta=
+            url = mojo_url,
+            callback = self.parse_mojo_worldwide,
+            meta = results
         )
 
 
-    def parse_mojo_worldwide():
-        pass
+    def parse_mojo_worldwide(self,response):
+        
+        try:
+            worldwide = response.xpath('//tr[contains(td/b/text(), "Worldwide:")]/td/b/text()')\
+            .extract()[1]
+        except:
+            worldwide = 'None'
+
+        results = response.request.meta
+        results.update({
+            'worldwide':worldwide
+        })
+
+        yield results
