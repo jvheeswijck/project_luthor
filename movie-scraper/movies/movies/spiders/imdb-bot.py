@@ -6,7 +6,7 @@ from scrapy.loader import ItemLoader
 
 # Scrapy version 1.4.0 needed
 
-start_year = 1980
+start_year = 2000
 end_year = 2017
 page_max = 10000
 
@@ -51,17 +51,20 @@ class IMDB_Spider(scrapy.Spider):
 
 
     def parse_film(self, response):
-        
+
         url = response.request.meta['url']
 
+        # Scrape fields
         title = response.xpath('//div[@class="title_wrapper"]/h1/text()').extract_first().strip()
         year = response.xpath('//span[@id="titleYear"]/a/text()').extract_first().strip()
+        # IMDB Rating
         rating = response.xpath('//div[@class="ratingValue"]/strong/span[@itemprop="ratingValue"]/text()').extract_first()
-        try:
+        try: # Rating Count
             rating_count = response.xpath('//span[@itemprop="ratingCount"]/text()').extract_first()
         except:
             rating_count = 'NaN'
-        
+
+        # Scrape MPAA Rating
         mpaa_raw = response.xpath('//span[@itemprop="contentRating"]/text()').extract_first()
         if mpaa_raw.lower() == 'g' :
             mpaa = 'G'
@@ -165,7 +168,7 @@ class IMDB_Spider(scrapy.Spider):
                  })
 
         
-        
+        # Grab worldwide gross
         yield response.follow(
             url = mojo_url,
             callback = self.parse_mojo_worldwide,
@@ -185,5 +188,5 @@ class IMDB_Spider(scrapy.Spider):
         results.update({
             'worldwide':worldwide
         })
-
+        # Store results
         yield results
